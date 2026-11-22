@@ -32,7 +32,7 @@ export default function Stores() {
                   <td className="td text-right">{yen(r.revenue)}</td>
                   <td className="td text-right">{yen((r.revenue * s.royaltyRate) / 100)}</td>
                   <td className="td">{{ draft: <span className="badge bg-slate-100 text-slate-500">未報告</span>, submitted: <span className="badge bg-amber-100 text-amber-800">報告済・未請求</span>, invoiced: <span className="badge bg-emerald-100 text-emerald-700">請求済</span> }[r.status]}</td>
-                  <td className="td">{r.status === 'submitted' && <button className="btn-primary" onClick={async () => { await issueRoyaltyInvoice(r, s, data.invoices, me); toast('ロイヤリティ請求書を発行しました') }}>ロイヤリティ請求を発行</button>}</td>
+                  <td className="td">{r.status === 'submitted' && <button className="btn-primary" onClick={async () => { await issueRoyaltyInvoice(r, s, data.invoices, me, data.analyses.filter((a) => a.storeId === s.id && a.status === 'published' && a.publishedAt?.startsWith(r.month)).length); toast('ロイヤリティ請求書を発行しました') }}>ロイヤリティ請求を発行</button>}</td>
                 </tr>
               ))}</tbody>
             </table></div>

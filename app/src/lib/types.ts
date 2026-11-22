@@ -1,6 +1,6 @@
 // ===== ユーザー =====
 export type HqRole = 'admin' | 'sales' | 'sv' | 'accounting'
-export type UserKind = 'hq' | 'fc' | 'field'
+export type UserKind = 'hq' | 'fc' | 'field' | 'partner' // partner = 提携先（転倒予防防止協会）
 
 export interface User {
   id: string
@@ -130,7 +130,11 @@ export interface InvoiceItem {
   amount: number // 税抜
   taxRate: number // 0 or 10
   account: string // freee 勘定科目
+  category?: FeeCategory // 分配計算用の費目
 }
+
+/** 分配ルールの対象になる費目 */
+export type FeeCategory = 'joining' | 'deposit' | 'training' | 'royalty' | 'system' | 'insole' | 'analysis'
 
 export interface Invoice {
   id: string
@@ -138,7 +142,8 @@ export interface Invoice {
   dealId?: string
   storeId?: string
   billToName: string
-  kind: 'initial' | 'royalty'
+  kind: 'initial' | 'royalty' | 'order'
+  orderId?: string
   title: string
   items: InvoiceItem[]
   issueDate: string
@@ -242,6 +247,128 @@ export interface AuditLog {
   action: string
 }
 
+// ===== 提携先（転倒予防防止協会）連携 =====
+
+export interface Product {
+  id: string
+  name: string
+  category: 'insole' | 'kit' | 'other'
+  sizes?: string[]
+  price: number // 税抜（加盟店への販売価格）
+  stock: number
+  description?: string
+}
+
+export interface OrderLine {
+  productId: string
+  name: string
+  size?: string
+  clientId?: string // 利用者向けの場合
+  qty: number
+  price: number
+}
+
+export type OrderStatus = 'ordered' | 'accepted' | 'shipped' | 'delivered' | 'cancelled'
+
+export interface Order {
+  id: string
+  number: string
+  storeId: string
+  orderedBy: string
+  orderedAt: string
+  lines: OrderLine[]
+  status: OrderStatus
+  note?: string
+  acceptedAt?: string
+  shippedAt?: string
+  trackingNo?: string
+  deliveredAt?: string
+  invoiceId?: string
+  analysisId?: string // AI分析レポートからの推奨で発注した場合
+}
+
+export interface DistributionRule {
+  id: string // = FeeCategory
+  category: FeeCategory
+  label: string
+  rate: number // 協会への分配率（%）
+  enabled: boolean
+}
+
+export interface SettlementLine {
+  invoiceId: string
+  invoiceNumber: string
+  billToName: string
+  category: FeeCategory
+  base: number // 税抜の対象額
+  rate: number
+  amount: number
+}
+
+export interface Settlement {
+  id: string // st_YYYY-MM
+  month: string // 入金月
+  lines: SettlementLine[]
+  total: number
+  status: 'draft' | 'confirmed' | 'paid'
+  confirmedAt?: string
+  paidAt?: string
+}
+
+export interface Video {
+  id: string
+  title: string
+  category: string
+  provider: 'hq' | 'partner'
+  minutes: number
+  required: boolean
+  description: string
+  storeIds: string[] // 公開先の店舗
+  createdAt: string
+}
+
+export interface VideoView {
+  id: string // `${userId}_${videoId}`
+  userId: string
+  storeId: string
+  videoId: string
+  progress: number // 0-100
+  completedAt?: string
+  updatedAt: string
+}
+
+export interface GaitMetrics {
+  speed: number // 歩行速度 m/s
+  stride: number // 歩幅 cm
+  asymmetry: number // 左右差 %
+  sway: number // 体幹の揺れ cm
+  toeClearance: number // つま先の上がり cm
+  cadence: number // 歩数/分
+}
+
+export type AnalysisStatus = 'analyzing' | 'review' | 'published'
+
+export interface Analysis {
+  id: string
+  storeId: string
+  clientId: string
+  videoFile: string
+  shotAt: string // 撮影日
+  uploadedBy: string
+  uploadedAt: string
+  consent: boolean
+  status: AnalysisStatus
+  metrics?: GaitMetrics
+  riskScore?: number // 0-100（高いほど転倒リスク高）
+  riskLevel?: 'low' | 'mid' | 'high'
+  findings?: string[] // 自動生成の所見
+  recommendations?: string[] // 自動生成の推奨
+  insoleRecommended?: boolean
+  reviewerComment?: string
+  reviewedBy?: string
+  publishedAt?: string
+}
+
 export interface Collections {
   users: User
   deals: Deal
@@ -255,10 +382,19 @@ export interface Collections {
   visits: Visit
   monthlyReports: MonthlyReport
   auditLogs: AuditLog
+  products: Product
+  orders: Order
+  distributionRules: DistributionRule
+  settlements: Settlement
+  videos: Video
+  videoViews: VideoView
+  analyses: Analysis
 }
 
 export type CollectionName = keyof Collections
+export const PARTNER_COLLECTIONS: CollectionName[] = ['products', 'orders', 'distributionRules', 'settlements', 'videos', 'videoViews', 'analyses']
 export const COLLECTIONS: CollectionName[] = [
   'users', 'deals', 'tasks', 'contracts', 'invoices', 'stores', 'notices',
   'clients', 'helpers', 'visits', 'monthlyReports', 'auditLogs',
+  ...PARTNER_COLLECTIONS,
 ]

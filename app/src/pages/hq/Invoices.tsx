@@ -38,7 +38,7 @@ export default function Invoices() {
       </div>
       <div className="flex flex-wrap gap-2">
         <select className="input w-40" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">すべての状態</option><option value="issued">未入金</option><option value="reported">入金報告あり</option><option value="paid">入金済</option></select>
-        <select className="input w-40" value={kind} onChange={(e) => setKind(e.target.value)}><option value="">すべての種別</option><option value="initial">加盟時（加盟金等）</option><option value="royalty">ロイヤリティ</option></select>
+        <select className="input w-40" value={kind} onChange={(e) => setKind(e.target.value)}><option value="">すべての種別</option><option value="initial">加盟時（加盟金等）</option><option value="royalty">ロイヤリティ</option><option value="order">備品発注</option></select>
         <input className="input w-40" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
       </div>
       <div className="card overflow-x-auto p-0">
@@ -69,11 +69,11 @@ export function InvoiceModal({ inv, onClose }: { inv: Invoice; onClose: () => vo
   return (
     <Modal title={`請求書 ${inv.number}`} onClose={onClose}>
       <div className="space-y-3 text-sm">
-        <div className="flex justify-between"><div><div className="text-lg font-bold">{inv.billToName} 御中</div><div className="text-slate-500">{inv.title}</div></div><div className="text-right text-xs text-slate-500">発行日 {fmtDate(inv.issueDate)}<br />お支払期限 {fmtDate(inv.dueDate)}<br />ケアリンクFC本部株式会社<br />登録番号 T0000000000000（モック）</div></div>
+        <div className="flex justify-between"><div><div className="text-lg font-bold">{inv.billToName} 御中</div><div className="text-slate-500">{inv.title}</div></div><div className="text-right text-xs text-slate-500">発行日 {fmtDate(inv.issueDate)}<br />お支払期限 {fmtDate(inv.dueDate)}<br />株式会社サクラコーポレーション<br />登録番号 T0000000000000（モック）</div></div>
         <table className="w-full"><thead><tr className="border-b"><th className="py-1 text-left">品目</th><th className="py-1 text-right">税率</th><th className="py-1 text-right">金額(税抜)</th></tr></thead>
           <tbody>{inv.items.map((it, i) => <tr key={i} className="border-b border-slate-100"><td className="py-1">{it.name}</td><td className="py-1 text-right">{it.taxRate ? '10%' : '非課税'}</td><td className="py-1 text-right">{yen(it.amount)}</td></tr>)}</tbody></table>
         <div className="ml-auto w-48 space-y-0.5 text-right"><div>小計 {yen(t.subtotal)}</div><div>消費税 {yen(t.tax)}</div><div className="text-lg font-bold">合計 {yen(t.total)}</div></div>
-        <div className="rounded bg-slate-50 p-2 text-xs text-slate-500">振込先: ○○銀行 本店営業部 普通 0000000 ケアリンクエフシーホンブ（モック）</div>
+        <div className="rounded bg-slate-50 p-2 text-xs text-slate-500">振込先: ○○銀行 本店営業部 普通 0000000 カ）サクラコーポレーション（モック）</div>
       </div>
     </Modal>
   )

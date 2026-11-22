@@ -2,7 +2,7 @@
 import type { ContractTerms, Deal } from './types'
 import { yen } from './utils'
 
-export const HQ_NAME = 'ケアリンクFC本部株式会社'
+export const HQ_NAME = '株式会社サクラコーポレーション'
 export const HQ_REP = '代表取締役 山田 一郎'
 
 export const DEFAULT_TERMS: ContractTerms = {

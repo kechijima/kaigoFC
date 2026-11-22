@@ -37,7 +37,7 @@ async function recalcDeal(deal: Deal, tasks: Task[], me: User) {
 async function openStore(deal: Deal, me: User) {
   const storeId = `s_${deal.id}`
   const store: StoreInfo = {
-    id: storeId, dealId: deal.id, name: `ケアリンク${deal.area.replace(/^.+?[都道府県]/, '').replace(/[市区町村].*$/, '')}`,
+    id: storeId, dealId: deal.id, name: `${deal.area.replace(/^.+?[都道府県]/, '').replace(/[市区町村].*$/, '')}事業所`,
     companyName: deal.companyName || deal.applicantName, ownerUserId: deal.ownerUserId!, address: deal.area,
     prefecture: deal.prefecture, officeNumber: '（指定通知書の番号を登録）', openDate: today(), status: 'open',
     royaltyRate: DEFAULT_TERMS.royaltyRate, systemFee: DEFAULT_TERMS.systemFee,
@@ -230,14 +230,15 @@ export async function submitMonthlyReport(rep: MonthlyReport, me: User) {
   await log(me, `${rep.month} 月次実績を報告`)
 }
 
-export async function issueRoyaltyInvoice(rep: MonthlyReport, store: StoreInfo, invoices: Invoice[], me: User) {
+export async function issueRoyaltyInvoice(rep: MonthlyReport, store: StoreInfo, invoices: Invoice[], me: User, analysisCount = 0) {
   const id = uid('inv_')
   const inv: Invoice = {
     id, number: nextInvoiceNumber(invoices), storeId: store.id, dealId: store.dealId, billToName: store.companyName,
     kind: 'royalty', title: `${rep.month.replace('-', '年')}月分 ロイヤリティ・システム利用料`,
     items: [
-      { name: `ロイヤリティ（月間売上 ${rep.revenue.toLocaleString()}円 × ${store.royaltyRate}%）`, amount: Math.round((rep.revenue * store.royaltyRate) / 100), taxRate: 10, account: '売上高' },
-      { name: 'システム利用料', amount: store.systemFee, taxRate: 10, account: '売上高' },
+      { name: `ロイヤリティ（月間売上 ${rep.revenue.toLocaleString()}円 × ${store.royaltyRate}%）`, amount: Math.round((rep.revenue * store.royaltyRate) / 100), taxRate: 10, account: '売上高', category: 'royalty' },
+      { name: 'システム利用料', amount: store.systemFee, taxRate: 10, account: '売上高', category: 'system' },
+      ...(analysisCount ? [{ name: `AI動画分析料（${analysisCount}件 × 3,000円）`, amount: analysisCount * 3000, taxRate: 10, account: '売上高', category: 'analysis' as const }] : []),
     ],
     issueDate: today(), dueDate: addDays(today(), 25), status: 'issued', monthlyReportId: rep.id,
   }

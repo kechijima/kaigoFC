@@ -1,8 +1,9 @@
 // 全コレクションを購読して画面に配る。現在のログインユーザー（ロール切替）もここで持つ。
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { db, isLocalEmpty } from './db'
 import { COLLECTIONS, type Collections, type CollectionName, type User } from './types'
 import { buildSeed } from './seed'
+import { migratePartnerData } from './partnerActions'
 
 type Data = { [K in CollectionName]: Collections[K][] }
 const empty = Object.fromEntries(COLLECTIONS.map((c) => [c, []])) as unknown as Data
@@ -48,6 +49,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => unsubs.forEach((u) => u())
   }, [])
 
+  // 提携先機能の追加前に作られたデータには、協会関連のダミーデータを一度だけ追加する
+  const loaded = loadedCols.size === COLLECTIONS.length
+  const migrated = useRef(false)
+  useEffect(() => {
+    if (!loaded || migrated.current || !data.users.length || data.products.length) return
+    migrated.current = true
+    migratePartnerData(data).catch((e) => setError(String(e)))
+  }, [loaded, data])
+
   if (error) {
     return (
       <div className="mx-auto max-w-xl p-8">
@@ -72,7 +82,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const me = data.users.find((u) => u.id === meId)
   return (
-    <DataContext.Provider value={{ data, loaded: loadedCols.size === COLLECTIONS.length, me, setMeId, toast }}>
+    <DataContext.Provider value={{ data, loaded, me, setMeId, toast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => (

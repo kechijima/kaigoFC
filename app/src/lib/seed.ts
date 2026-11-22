@@ -7,6 +7,7 @@ import { instantiateTasks } from './workflow'
 import { CONTRACT_TEMPLATES, DEFAULT_TERMS, HQ_REP } from './contracts'
 import { addDays, sha256, today } from './utils'
 import { initialInvoiceItems } from './billing'
+import { buildPartnerSeed } from './partner'
 
 type SeedData = { [K in CollectionName]: Collections[K][] }
 
@@ -61,9 +62,9 @@ const DEAL_SPECS: DealSpec[] = [
 ]
 
 const STORE_NAMES: Record<string, { name: string; address: string; officeNumber: string }> = {
-  d10: { name: 'ケアリンク世田谷', address: '東京都世田谷区三軒茶屋1-2-3', officeNumber: '1371200001' },
-  d11: { name: 'ケアリンク川崎高津', address: '神奈川県川崎市高津区溝口2-3-4', officeNumber: '1471500002' },
-  d12: { name: 'ケアリンク船橋', address: '千葉県船橋市本町3-4-5', officeNumber: '1270400003' },
+  d10: { name: '世田谷事業所', address: '東京都世田谷区三軒茶屋1-2-3', officeNumber: '1371200001' },
+  d11: { name: '川崎高津事業所', address: '神奈川県川崎市高津区溝口2-3-4', officeNumber: '1471500002' },
+  d12: { name: '船橋事業所', address: '千葉県船橋市本町3-4-5', officeNumber: '1270400003' },
 }
 
 const romaji: Record<string, string> = {
@@ -368,7 +369,12 @@ export async function buildSeed(): Promise<SeedData> {
     { id: 'n3', title: '開業準備オンライン相談会（毎週水曜）', body: '開業準備中の加盟者向けに、指定申請・採用の相談会を毎週水曜15時から開催しています。', target: 'fc_applicants', createdAt: addDays(T, -10) + 'T09:00:00.000Z', createdBy: 'u_takahashi', readBy: [] },
   ]
 
-  return { users, deals, tasks, contracts, invoices, stores, notices, clients, helpers, visits, monthlyReports, auditLogs }
+  const ps = buildPartnerSeed({ stores, clients, helpers, users, invoices })
+  notices.unshift({ id: 'n0', title: '【新機能】転倒予防防止協会のAI歩行分析・インソール発注が使えるようになりました', body: '業務システムの「歩行分析」から利用者の歩行動画をアップロードすると、協会がAI分析レポートをお返しします。レポートで推奨されたインソールはそのまま発注できます。', target: 'stores', createdAt: addDays(T, -1) + 'T09:00:00.000Z', createdBy: 'u_yamada', readBy: [] })
+  return {
+    users: [...users, ...ps.users], deals, tasks, contracts, invoices: [...invoices, ...ps.invoices], stores, notices, clients, helpers, visits, monthlyReports, auditLogs,
+    products: ps.products, orders: ps.orders, distributionRules: ps.distributionRules, settlements: ps.settlements, videos: ps.videos, videoViews: ps.videoViews, analyses: ps.analyses,
+  }
 }
 
 function toNextMonth(y: number, m: number, day: number) {
